@@ -144,6 +144,12 @@ class SemSeg(torch.nn.Module):
     def vis_on_batch(self, batch, savedir_image, save_preds=False):
         # os.makedirs(savedir_image, exist_ok=True)
         self.eval()
+        
+        onnx_output = torch.onnx._export(self.model_base, torch_input.cuda(), 'onnx_model.onnx', verbose=False, opset_version=11)
+
+        #onnx_output = torch.onnx._export(self.model_base, torch_input.cuda(), 'onnx_model2.onnx', verbose=False, opset_version=11, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK)
+
+
         # clf
         pred_mask = self.predict_on_batch(batch).cpu()
         # print(pred_mask.sum())
