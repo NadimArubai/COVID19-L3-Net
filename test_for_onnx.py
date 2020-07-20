@@ -61,7 +61,7 @@ def test(exp_dict, savedir_base, datadir,  num_workers=0, model_path=None, scan_
     # Model
     # ==================
     # chk = torch.load('best_model.ckpt')
-    model = models.get_model(model_dict=exp_dict['model'],
+    model = models.get_model_for_onnx(model_dict=exp_dict['model'],
                              exp_dict=exp_dict,
                              train_set=test_set).cuda()
     epoch = -1
