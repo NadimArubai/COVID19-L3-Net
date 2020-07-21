@@ -21,7 +21,7 @@ from src.models import base_networks
 from skimage.segmentation import mark_boundaries
 from skimage.color import label2rgb
 
-from . import losses, metrics
+from . import losses, metrics_for_onnx as metrics
 
 import onnx
 import onnxruntime
