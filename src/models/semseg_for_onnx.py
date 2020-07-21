@@ -27,7 +27,8 @@ import onnx
 import onnxruntime
 import cv2
 from google.colab.patches import cv2_imshow
-
+from onnx import optimizer as onnx_optimizer
+                    
 class SemSeg(torch.nn.Module):
     def __init__(self, exp_dict, train_set):
         super().__init__()
@@ -96,18 +97,24 @@ class SemSeg(torch.nn.Module):
         for i, batch in enumerate(val_loader):
             if self.just_one:
                 net_name = self.exp_dict['model'].get('base', 'unet2d')
-                print(net_name)
+                #print(net_name)
                 if net_name == 'unet2d':
-                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12)
+                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12, keep_initializers_as_inputs=True, export_params=True)
                     print('Exported to onnx_model_unet2d.onnx')
                     onnx_model = onnx.load("onnx_model_unet2d.onnx")
-                    content = onnx_model.SerializeToString()
+                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
+                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
+                    onnx.save(optimized_model, "optimized_model_unet2d.onnx")
+                    content = optimized_model.SerializeToString()
                     self.sess = onnxruntime.InferenceSession(content)
                 elif net_name == 'pspnet':
-                    self.onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK)
+                    self.onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, keep_initializers_as_inputs=True, export_params=True)
                     print('Exported to onnx_model_pspnet.onnx')
                     onnx_model = onnx.load("onnx_model_pspnet.onnx")
-                    content = onnx_model.SerializeToString()
+                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
+                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
+                    onnx.save(optimized_model, "optimized_model_pspnet.onnx")
+                    content = optimized_model.SerializeToString()
                     self.sess = onnxruntime.InferenceSession(content)
                 else:
                     print('not supported network to export.')
