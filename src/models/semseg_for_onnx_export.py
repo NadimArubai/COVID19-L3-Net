@@ -99,29 +99,30 @@ class SemSeg(torch.nn.Module):
                 net_name = self.exp_dict['model'].get('base', 'unet2d')
                 #print(net_name)
                 if net_name == 'unet2d':
-#                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12, keep_initializers_as_inputs=True, export_params=True)
-#                    print('Exported to onnx_model_unet2d.onnx')
-#                    onnx_model = onnx.load("onnx_model_unet2d.onnx")
-#                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
-#                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
-#                    onnx.save(optimized_model, "optimized_model_unet2d.onnx")
-                    onnx_model = onnx.load("optimized_model_unet2d.onnx")
-                    content = onnx_model.SerializeToString()
-                    self.sess = onnxruntime.InferenceSession(content)
+                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12, keep_initializers_as_inputs=True, export_params=True)
+                    print('Exported to onnx_model_unet2d.onnx')
+                    onnx_model = onnx.load("onnx_model_unet2d.onnx")
+                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
+                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
+                    onnx.save(optimized_model, "onnx_optimized_model_unet2d.onnx")
+                    print('Exported to onnx_optimized_model_unet2d.onnx')
+                    #content = optimized_model.SerializeToString()
+                    #self.sess = onnxruntime.InferenceSession(content)
                 elif net_name == 'pspnet':
-#                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, keep_initializers_as_inputs=True, export_params=True)
-#                    print('Exported to onnx_model_pspnet.onnx')
-#                    onnx_model = onnx.load("onnx_model_pspnet.onnx")
-#                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
-#                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
-#                    onnx.save(optimized_model, "optimized_model_pspnet.onnx")
-                    onnx_model = onnx.load("optimized_model_pspnet.onnx")
-                    content = onnx_model.SerializeToString()
-                    self.sess = onnxruntime.InferenceSession(content)
+                    self.onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, keep_initializers_as_inputs=True, export_params=True)
+                    print('Exported to onnx_model_pspnet.onnx')
+                    onnx_model = onnx.load("onnx_model_pspnet.onnx")
+                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
+                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
+                    onnx.save(optimized_model, "onnx_optimized_model_pspnet.onnx")
+                    print('Exported to onnx_optimized_model_pspnet.onnx')
+                    #content = optimized_model.SerializeToString()
+                    #self.sess = onnxruntime.InferenceSession(content)
                 else:
                     print('not supported network to export.')
                 self.just_one = False
-            seg_monitor.val_on_batch(self, batch)
+            break
+#            seg_monitor.val_on_batch(self, batch)
 
             #print(batch['images'].numpy().shape)
             #x = self.predict_on_batch_onnx(batch)#, onnx_model)
@@ -134,21 +135,21 @@ class SemSeg(torch.nn.Module):
             # cv2.imwrite('Save/torch_pred_{}.jpg'.format(i), y[0]/np.max(y))
             # cv2_imshow(x[0])
             # cv2_imshow(y[0])
-            pbar.update(1)
+#            pbar.update(1)
 
-            if savedir_images and i < n_images:
-                os.makedirs(savedir_images, exist_ok=True)
-                self.vis_on_batch(batch, savedir_image=os.path.join(
-                   savedir_images, "%d.jpg" % i), save_preds=save_preds)
-                pbar.set_description("Validating & Saving Images: %.4f mIoU" %
-                                 (seg_monitor.get_avg_score()['val_score']))
-            else:
-                pbar.set_description("Validating: %.4f mIoU" %
-                                 (seg_monitor.get_avg_score()['val_score']))
+#            if savedir_images and i < n_images:
+#                os.makedirs(savedir_images, exist_ok=True)
+#                self.vis_on_batch(batch, savedir_image=os.path.join(
+#                   savedir_images, "%d.jpg" % i), save_preds=save_preds)
+#                pbar.set_description("Validating & Saving Images: %.4f mIoU" %
+#                                 (seg_monitor.get_avg_score()['val_score']))
+#            else:
+#                pbar.set_description("Validating: %.4f mIoU" %
+#                                 (seg_monitor.get_avg_score()['val_score']))
 # remove break to scan all images and get the full score
             #break
 
-        pbar.close()
+#        pbar.close()
         val_dict = seg_monitor.get_avg_score()
         out_dict = {}
         for c in range(self.n_classes):
@@ -205,104 +206,104 @@ class SemSeg(torch.nn.Module):
         logits = match_image_size(images, logits)
         return torch.from_numpy(np.argmax(logits, axis=1))
 
-    @torch.no_grad()
-    def vis_on_batch(self, batch, savedir_image, save_preds=False):
-        # os.makedirs(savedir_image, exist_ok=True)
-        self.eval()
+#    @torch.no_grad()
+#    def vis_on_batch(self, batch, savedir_image, save_preds=False):
+#        # os.makedirs(savedir_image, exist_ok=True)
+#        self.eval()
 
-        # if self.just_one:
-        #   onnx_output = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model.onnx', verbose=False, opset_version=12)
-        #   self.just_one = False
+#        # if self.just_one:
+#        #   onnx_output = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model.onnx', verbose=False, opset_version=12)
+#        #   self.just_one = False
 
-        # onnx_output = torch.onnx._export(self.model_base, torch_input.cuda(), 'onnx_model2.onnx', verbose=False, opset_version=11, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK)
+#        # onnx_output = torch.onnx._export(self.model_base, torch_input.cuda(), 'onnx_model2.onnx', verbose=False, opset_version=11, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK)
 
 
-        # clf
-        #pred_mask = self.predict_on_batch(batch).cpu()
-        pred_mask = self.predict_on_batch_onnx(batch).cpu()
+#        # clf
+#        #pred_mask = self.predict_on_batch(batch).cpu()
+#        pred_mask = self.predict_on_batch_onnx(batch).cpu()
 
-        # print(pred_mask.sum())
-        img = hu.f2l(batch['images'])[0]
-        img += abs(img.min())
-        img /= img.max()
-        img = img.repeat(1,1,3)
+#        # print(pred_mask.sum())
+#        img = hu.f2l(batch['images'])[0]
+#        img += abs(img.min())
+#        img /= img.max()
+#        img = img.repeat(1,1,3)
 
-        mask_vis = batch["masks"].clone().float()[0][..., None]
-        mask_vis[mask_vis == 255] = 0
+#        mask_vis = batch["masks"].clone().float()[0][..., None]
+#        mask_vis[mask_vis == 255] = 0
 
-        pred_mask_vis = pred_mask.clone().float()[0][..., None]
-        vmax = 0.1
+#        pred_mask_vis = pred_mask.clone().float()[0][..., None]
+#        vmax = 0.1
 
-        fig, ax_list = plt.subplots(ncols=3, nrows=1)
-        ax_list[0].imshow(img[:, :, 0], cmap='gray',
-                        #   interpolation='sinc', vmin=0, vmax=0.4
-                          )
+#        fig, ax_list = plt.subplots(ncols=3, nrows=1)
+#        ax_list[0].imshow(img[:, :, 0], cmap='gray',
+#                        #   interpolation='sinc', vmin=0, vmax=0.4
+#                          )
 
-        colors_all = np.array(['black', 'red', 'blue', 'green', 'purple'])
-        colors = colors_all[np.unique(mask_vis).astype(int)]
+#        colors_all = np.array(['black', 'red', 'blue', 'green', 'purple'])
+#        colors = colors_all[np.unique(mask_vis).astype(int)]
 
-        vis = label2rgb(mask_vis[:, :, 0].numpy(), image=img.numpy(
-        ), colors=colors, bg_label=255, bg_color=None, alpha=0.6, kind='overlay')
-        vis = mark_boundaries(
-            vis, mask_vis[:, :, 0].numpy().astype('uint8'), color=(1, 1, 1))
+#        vis = label2rgb(mask_vis[:, :, 0].numpy(), image=img.numpy(
+#        ), colors=colors, bg_label=255, bg_color=None, alpha=0.6, kind='overlay')
+#        vis = mark_boundaries(
+#            vis, mask_vis[:, :, 0].numpy().astype('uint8'), color=(1, 1, 1))
 
-        ax_list[1].imshow(vis, cmap='gray')
+#        ax_list[1].imshow(vis, cmap='gray')
 
-        colors = colors_all[np.unique(pred_mask_vis).astype(int)]
-        vis = label2rgb(pred_mask_vis[:, :, 0].numpy(), image=img.numpy(
-        ), colors=colors, bg_label=255, bg_color=None, alpha=0.6, kind='overlay')
-        vis = mark_boundaries(
-            vis, pred_mask_vis[:, :, 0].numpy().astype('uint8'), color=(1, 1, 1))
+#        colors = colors_all[np.unique(pred_mask_vis).astype(int)]
+#        vis = label2rgb(pred_mask_vis[:, :, 0].numpy(), image=img.numpy(
+#        ), colors=colors, bg_label=255, bg_color=None, alpha=0.6, kind='overlay')
+#        vis = mark_boundaries(
+#            vis, pred_mask_vis[:, :, 0].numpy().astype('uint8'), color=(1, 1, 1))
 
-        ax_list[2].imshow(vis, cmap='gray')
+#        ax_list[2].imshow(vis, cmap='gray')
 
-        for i in range(1, self.n_classes):
-            plt.plot([None], [None], label='group %d' % i, color=colors_all[i])
-        # ax_list[1].axis('off')
-        ax_list[0].grid()
-        ax_list[1].grid()
-        ax_list[2].grid()
+#        for i in range(1, self.n_classes):
+#            plt.plot([None], [None], label='group %d' % i, color=colors_all[i])
+#        # ax_list[1].axis('off')
+#        ax_list[0].grid()
+#        ax_list[1].grid()
+#        ax_list[2].grid()
 
-        ax_list[0].tick_params(axis='x', labelsize=6)
-        ax_list[0].tick_params(axis='y', labelsize=6)
+#        ax_list[0].tick_params(axis='x', labelsize=6)
+#        ax_list[0].tick_params(axis='y', labelsize=6)
 
-        ax_list[1].tick_params(axis='x', labelsize=6)
-        ax_list[1].tick_params(axis='y', labelsize=6)
+#        ax_list[1].tick_params(axis='x', labelsize=6)
+#        ax_list[1].tick_params(axis='y', labelsize=6)
 
-        ax_list[2].tick_params(axis='x', labelsize=6)
-        ax_list[2].tick_params(axis='y', labelsize=6)
+#        ax_list[2].tick_params(axis='x', labelsize=6)
+#        ax_list[2].tick_params(axis='y', labelsize=6)
 
-        ax_list[0].set_title('Original image', fontsize=8)
-        ax_list[1].set_title('Ground-truth',  fontsize=8)
-        ax_list[2].set_title('Prediction',  fontsize=8)
+#        ax_list[0].set_title('Original image', fontsize=8)
+#        ax_list[1].set_title('Ground-truth',  fontsize=8)
+#        ax_list[2].set_title('Prediction',  fontsize=8)
 
-        legend_kwargs = {"loc": 2, "bbox_to_anchor": (1.05, 1),
-                         'borderaxespad': 0., "ncol": 1}
-        ax_list[2].legend(fontsize=6, **legend_kwargs)
-        plt.savefig(savedir_image.replace('.jpg', '.png'),
-                    bbox_inches='tight', dpi=300)
-        plt.close()
+#        legend_kwargs = {"loc": 2, "bbox_to_anchor": (1.05, 1),
+#                         'borderaxespad': 0., "ncol": 1}
+#        ax_list[2].legend(fontsize=6, **legend_kwargs)
+#        plt.savefig(savedir_image.replace('.jpg', '.png'),
+#                    bbox_inches='tight', dpi=300)
+#        plt.close()
 
-        # save predictions
-        if save_preds:
-            from PIL import Image
-            pred_dict = {}
-            pred_numpy = pred_mask.cpu().numpy().squeeze().astype('uint8')
+#        # save predictions
+#        if save_preds:
+#            from PIL import Image
+#            pred_dict = {}
+#            pred_numpy = pred_mask.cpu().numpy().squeeze().astype('uint8')
 
-            uniques = np.unique(np.array(pred_numpy))
-            # print(uniques)
-            meta_dict = batch['meta'][0]
+#            uniques = np.unique(np.array(pred_numpy))
+#            # print(uniques)
+#            meta_dict = batch['meta'][0]
 
-            for u in range(self.n_classes):
-                meta_dict['gt_group%d_n_pixels'%u] = float((batch['masks']==u).float().sum())
-                meta_dict['pred_group%d_n_pixels'%u] = float((pred_mask==u).float().sum())
-                
-                if u == 0:
-                    continue
-                pred = Image.fromarray(pred_numpy==u)
-                pred.save(savedir_image.replace('.jpg', '_group%d.png'%u))
+#            for u in range(self.n_classes):
+#                meta_dict['gt_group%d_n_pixels'%u] = float((batch['masks']==u).float().sum())
+#                meta_dict['pred_group%d_n_pixels'%u] = float((pred_mask==u).float().sum())
+#                
+#                if u == 0:
+#                    continue
+#                pred = Image.fromarray(pred_numpy==u)
+#                pred.save(savedir_image.replace('.jpg', '_group%d.png'%u))
 
-            hu.save_json(savedir_image.replace('.jpg', '.json'), meta_dict)
+#            hu.save_json(savedir_image.replace('.jpg', '.json'), meta_dict)
             
 
 def match_image_size(images, logits):
