@@ -99,31 +99,31 @@ class SemSeg(torch.nn.Module):
                 net_name = self.exp_dict['model'].get('base', 'unet2d')
                 #print(net_name)
                 if net_name == 'unet2d':
-                    torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12, keep_initializers_as_inputs=True, export_params=True)
+                    raw_onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_unet2d.onnx', verbose=False, opset_version=12, keep_initializers_as_inputs=True, export_params=True)
                     print('Exported to onnx_model_unet2d.onnx')
                     onnx_model = onnx.load("onnx_model_unet2d.onnx")
                     passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
                     optimized_model = onnx_optimizer.optimize(onnx_model, passes)
                     onnx.save(optimized_model, "onnx_optimized_model_unet2d.onnx")
                     print('Exported to onnx_optimized_model_unet2d.onnx')
-                    #content = optimized_model.SerializeToString()
-                    #self.sess = onnxruntime.InferenceSession(content)
+                    content = optimized_model.SerializeToString()
+                    self.sess = onnxruntime.InferenceSession(content)
                 elif net_name == 'pspnet':
-                    self.onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, keep_initializers_as_inputs=True, export_params=True)
+                    raw_onnx_model = torch.onnx._export(self.model_base, batch['images'].cuda(), 'onnx_model_pspnet.onnx', verbose=False, opset_version=12, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, keep_initializers_as_inputs=True, export_params=True)
                     print('Exported to onnx_model_pspnet.onnx')
                     onnx_model = onnx.load("onnx_model_pspnet.onnx")
                     passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
                     optimized_model = onnx_optimizer.optimize(onnx_model, passes)
                     onnx.save(optimized_model, "onnx_optimized_model_pspnet.onnx")
                     print('Exported to onnx_optimized_model_pspnet.onnx')
-                    #content = optimized_model.SerializeToString()
-                    #self.sess = onnxruntime.InferenceSession(content)
+                    content = optimized_model.SerializeToString()
+                    self.sess = onnxruntime.InferenceSession(content)
                 else:
                     print('not supported network to export.')
                 self.just_one = False
+            
+            seg_monitor.val_on_batch(self, batch)
             break
-#            seg_monitor.val_on_batch(self, batch)
-
             #print(batch['images'].numpy().shape)
             #x = self.predict_on_batch_onnx(batch)#, onnx_model)
             #x = self.predict_on_batch_onnx(batch).cpu().numpy()
@@ -328,5 +328,6 @@ def match_image_size(images, logits):
 
 #     def get_avg_score(self):
 #         return {k:v/(self.n + 1) for k,v in self.score_dict_sum.items()}
+
 
 

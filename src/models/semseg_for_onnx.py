@@ -105,7 +105,7 @@ class SemSeg(torch.nn.Module):
 #                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
 #                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
 #                    onnx.save(optimized_model, "optimized_model_unet2d.onnx")
-                    onnx_model = onnx.load("optimized_model_unet2d.onnx")
+                    onnx_model = onnx.load("onnx_optimized_model_unet2d.onnx")
                     content = onnx_model.SerializeToString()
                     self.sess = onnxruntime.InferenceSession(content)
                 elif net_name == 'pspnet':
@@ -115,7 +115,7 @@ class SemSeg(torch.nn.Module):
 #                    passes = ["extract_constant_to_initializer", "eliminate_unused_initializer"]
 #                    optimized_model = onnx_optimizer.optimize(onnx_model, passes)
 #                    onnx.save(optimized_model, "optimized_model_pspnet.onnx")
-                    onnx_model = onnx.load("optimized_model_pspnet.onnx")
+                    onnx_model = onnx.load("onnx_optimized_model_unet2d.onnx")
                     content = onnx_model.SerializeToString()
                     self.sess = onnxruntime.InferenceSession(content)
                 else:
