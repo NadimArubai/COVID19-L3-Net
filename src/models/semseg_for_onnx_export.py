@@ -26,7 +26,7 @@ from . import losses, metrics_for_onnx as metrics
 import onnx
 import onnxruntime
 import cv2
-from google.colab.patches import cv2_imshow
+#from google.colab.patches import cv2_imshow
 from onnx import optimizer as onnx_optimizer
                     
 class SemSeg(torch.nn.Module):
